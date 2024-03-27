@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.navArgs
@@ -15,18 +16,12 @@ import com.bignerdranch.android.photogallery.databinding.FragmentPhotoPageBindin
 
 class PhotoPageFragment : Fragment() {
     private val args: PhotoPageFragmentArgs by navArgs()
+    private var _binding: FragmentPhotoPageBinding? = null
+    private val binding get() = _binding!!
 
     @SuppressLint("SetJavaScriptEnabled")
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val binding = FragmentPhotoPageBinding.inflate(
-            inflater,
-            container,
-            false
-        )
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentPhotoPageBinding.inflate(inflater, container, false)
 
         binding.apply {
             progressBar.max = 100
@@ -37,10 +32,7 @@ class PhotoPageFragment : Fragment() {
                 loadUrl(args.photoPageUri.toString())
 
                 webChromeClient = object : WebChromeClient() {
-                    override fun onProgressChanged(
-                        webView: WebView,
-                        newProgress: Int
-                    ) {
+                    override fun onProgressChanged(webView: WebView, newProgress: Int) {
                         if (newProgress == 100) {
                             progressBar.visibility = View.GONE
                         } else {
@@ -49,10 +41,7 @@ class PhotoPageFragment : Fragment() {
                         }
                     }
 
-                    override fun onReceivedTitle(
-                        view: WebView?,
-                        title: String?
-                    ) {
+                    override fun onReceivedTitle(view: WebView?, title: String?) {
                         val parent = requireActivity() as AppCompatActivity
                         parent.supportActionBar?.subtitle = title
                     }
@@ -60,6 +49,24 @@ class PhotoPageFragment : Fragment() {
             }
         }
 
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.webView.canGoBack()) {
+                    binding.webView.goBack()
+                } else {
+                    isEnabled = false
+                    requireActivity().onBackPressed()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+
         return binding.root
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }
+
